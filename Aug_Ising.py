@@ -2,10 +2,11 @@ import numpy as np
 
 
 
-class Ising2D_CMC:
+class Aug_Ising2D_CMC:
     def __init__(self,L,T):
         self.L = L
-        self.x = 2*np.random.randint(2,size=L**2) - 1
+        self.y = np.random.uniform(-1.,1.,size=self.L**2)
+        self.x = np.sign(self.y)
         self.T = T
 
         self.Typ = {'M':0,'M2':1,'M4':2,'E':3}
@@ -13,12 +14,13 @@ class Ising2D_CMC:
         self.MCS_cntr = 0
 
     def reset(self):
-        self.x = 2*np.random.randint(2,size=L**2) - 1
+        self.y = np.random.uniform(-1.,1.,size=self.L**2)
+        self.x = np.sign(self.y)
         self.Clear_Measurement()
 
-    def Evaluate(self,x2,weight=1.):
-        E2 = GetE(x2)
-        E  = GetE(self.x)
+    def Evaluate(self,y2,weight=1.):
+        E2 = GetE(y2)
+        E  = GetE(self.y)
 
         A = np.exp(-(E2-E)/self.T) * weight
         if A >= 1 :
@@ -28,36 +30,42 @@ class Ising2D_CMC:
         else :
             return 0
 
-    def GetE(self,x2):
+    def GetE(self,y2):
         """
             This is a private function
             Do not call directly.
         """
-        tmp = x2.reshape((self.L,self.L))
-        E = -np.sum(tmp * (np.roll(tmp,1) + np.roll(tmp,1,axis=0)))
-        return E
+        Ag = -np.dot(y2,y2)*0.5
 
-    def Update(self,x2):
-        self.x = np.copy(x2)
+        tmp = np.sign(y2).reshape((self.L,self.L))
+        E = -np.sum(tmp * (np.roll(tmp,1) + np.roll(tmp,1,axis=0)))
+        return Ag + E
+
+    def Update(self,y2):
+        self.y = np.copy(y2)
 
 
     def Algo_SSU(self,weight=1.):
         xy = np.random.randint(self.L,size=2)
-        h =  self.x[xy[0]*self.L + (xy[1] + 1)%self.L]\
-           + self.x[xy[0]*self.L + (xy[1]-1+self.L)%self.L]\
-           + self.x[((xy[0]+1)%self.L)*self.L + xy[1]]\
-           + self.x[((xy[0]-1+self.L)%self.L)*self.L + xy[1]]
+        neigh = np.array([xy[0]*self.L + (xy[1] + 1)%self.L,\
+                        xy[0]*self.L + (xy[1]-1+self.L)%self.L,\
+                        ((xy[0]+1)%self.L)*self.L + xy[1],\
+                        ((xy[0]-1+self.L)%self.L)*self.L + xy[1]])
+        h =  np.sum(self.x[neigh])\
+
         st = xy[0]*self.L + xy[1]
-        new_s = np.random.randint(2)
+        new_y = np.random.uniform(-1,1)
 
-        dE =  (self.x[st] - new_s )*h
-
+        dE =  (-np.sign(new_y) + self.x[st])*h + (self.y[st]**2 - new_y**2)/2
 
         A = np.exp(-dE/self.T) * weight
         if A >= 1:
-            self.x[st] *= -1
+            self.y[st] = new_y
+            self.x[st] = np.sign(new_y)
         elif np.random.uniform() < A:
-            self.x[st] *= -1
+            self.y[st] = new_y
+            self.x[st] = np.sign(new_y)
+
 
     def Measurement(self,weight=1.):
         M2 = np.sum(self.x)/self.L**2
@@ -68,7 +76,6 @@ class Ising2D_CMC:
         self.Obs[self.Typ['M4']] += M2**2
         self.Obs[self.Typ['E']] += self.GetE(self.x) / self.L**2
         self.MCS_cntr += 1
-
     def Statistic(self):
         self.Obs /= self.MCS_cntr
 
@@ -84,7 +91,7 @@ if __name__ == "__main__":
     BINNUM = 4
     BINSZ  = 20000
 
-    MC = Ising2D_CMC(L,T)
+    MC = Aug_Ising2D_CMC(L,T)
 
     #print ( MC.GetE(MC.x) )
     BinData = []
