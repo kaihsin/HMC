@@ -34,7 +34,7 @@ class Ising2D_CMC:
             Do not call directly.
         """
         tmp = x2.reshape((self.L,self.L))
-        E = -np.sum(tmp * (np.roll(tmp,1) + np.roll(tmp,1,axis=0)))
+        E = -np.sum(tmp * (np.roll(tmp,1,axis=1) + np.roll(tmp,1,axis=0)))
         return E
 
     def Update(self,x2):

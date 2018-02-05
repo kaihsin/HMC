@@ -38,7 +38,7 @@ class Aug_Ising2D_CMC:
         Ag = -np.dot(y2,y2)*0.5
 
         tmp = np.sign(y2).reshape((self.L,self.L))
-        E = -np.sum(tmp * (np.roll(tmp,1) + np.roll(tmp,1,axis=0)))
+        E = -np.sum(tmp * (np.roll(tmp,1,axis=1) + np.roll(tmp,1,axis=0)))
         return Ag + E
 
     def Update(self,y2):
