@@ -3,7 +3,7 @@ import numpy as np
 
 
 class Aug_Ising2D_CMC:
-    def __init__(self,L,T):
+    def __init__(self,L,T,is_hmc=False,mom_std=1.0,LF_step=0.06):
         self.L = L
         self.N = L**2
         self.y = np.random.uniform(-1.,1.,size=self.N)
@@ -13,6 +13,14 @@ class Aug_Ising2D_CMC:
         self.Typ = {'M':0,'M2':1,'M4':2,'E':3}
         self.Obs = np.zeros(len(self.Typ))
         self.MCS_cntr = 0
+        self.is_hmc=is_hmc
+        self.p = None
+        self.mom_std = mom_std
+        self.LF_step = LF_step
+        if self.is_hmc:
+            self.p = np.random.normal(0,2*self.mom_std,size=self.N)
+        
+
 
     def reset(self):
         self.y = np.random.uniform(-1.,1.,size=self.L**2)
@@ -67,16 +75,34 @@ class Aug_Ising2D_CMC:
             self.y[st] = new_y
             self.x[st] = np.sign(new_y)
 
-    def Algo_HMC(self,mom_std,LF_step):
+    def Algo_HMC(self):
+        if not self.is_hmc:
+            print("[ERROR] the hmc is not enabled")
+            exit(99)
+        ## K(p) = p**2/(2*mom_std)
+        ## U(y) = -y**2/(2)
         ## renew momentum wrt gaussian distro.
-        p_s = np.random.normal(0,mom_std,size=self.N)
+        p_s = np.random.normal(0,2*self.mom_std,size=self.N)
         
         ## Couple with potiential (Ising model) to evolve y
-        p_new = 
-        s_new = 
-        
+        ## Leap Frog: 
+        p_new = p_s - self.LF_step*0.5* (-self.y)
+        s_new = self.y + self.LF_step*p_new/self.mom_std
+        p_new = p_new - self.LF_step*0.5*(-s_new)
+
         ## M-H :
-        
+        dE = np.sum(p_new**2-self.p**2)/(2.*self.mom_std) + self.GetE(s_new) - self.GetE(self.y)
+        #print(p_new)    
+        A = np.exp(-dE/self.T)
+        if A >= 1:
+            self.y = s_new
+            self.x = np.sign(self.y)
+            self.p = p_new
+        elif np.random.uniform() < A:
+            self.y = s_new
+            self.x = np.sign(self.y)
+            self.p = p_new
+
 
     def Measurement(self,weight=1.):
         M2 = np.sum(self.x)/self.L**2
@@ -98,23 +124,26 @@ if __name__ == "__main__":
 
     L = 8
     T = 10.0
-    EQUIN = 20000
-    BINNUM = 4
+    EQUIN = 40000
+    BINNUM = 10
     BINSZ  = 20000
 
-    MC = Aug_Ising2D_CMC(L,T)
-
+    ##MC = Aug_Ising2D_CMC(L,T,is_hmc=1)
+    MC = Aug_Ising2D_CMC(L,T,is_hmc=1)
+    
     #print ( MC.GetE(MC.x) )
     BinData = []
     print ("Equi")
     for i in range(EQUIN):
-        MC.Algo_SSU()
+        #MC.Algo_SSU()
+        MC.Algo_HMC()
 
     print ("statistic")
     for b in range(BINNUM):
         print ("Bin %d"%(b))
         for sz in range(BINSZ):
-            MC.Algo_SSU()
+            #MC.Algo_SSU()
+            MC.Algo_HMC()
             MC.Measurement()
         MC.Statistic()
         # get Bin data:
