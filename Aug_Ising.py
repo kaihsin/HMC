@@ -5,7 +5,8 @@ import numpy as np
 class Aug_Ising2D_CMC:
     def __init__(self,L,T):
         self.L = L
-        self.y = np.random.uniform(-1.,1.,size=self.L**2)
+        self.N = L**2
+        self.y = np.random.uniform(-1.,1.,size=self.N)
         self.x = np.sign(self.y)
         self.T = T
 
@@ -65,6 +66,15 @@ class Aug_Ising2D_CMC:
         elif np.random.uniform() < A:
             self.y[st] = new_y
             self.x[st] = np.sign(new_y)
+
+    def Algo_HMC(self,mom_std,LF_step):
+        ## renew momentum wrt gaussian distro.
+        p_s = np.random.normal(0,mom_std,size=self.N)
+        
+        ## Couple with potiential (Ising model) to evolve 
+        p_new = 
+        s_new = 
+        
 
 
     def Measurement(self,weight=1.):
