@@ -71,11 +71,12 @@ class Aug_Ising2D_CMC:
         ## renew momentum wrt gaussian distro.
         p_s = np.random.normal(0,mom_std,size=self.N)
         
-        ## Couple with potiential (Ising model) to evolve 
+        ## Couple with potiential (Ising model) to evolve y
         p_new = 
         s_new = 
         
-
+        ## M-H :
+        
 
     def Measurement(self,weight=1.):
         M2 = np.sum(self.x)/self.L**2
